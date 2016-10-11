@@ -27,13 +27,14 @@ import UIKit
     var image: UIImage? { get }
     var thumbnailImage: UIImage? { get }
     
-    func loadImageWithCompletionHandler(_ completion: @escaping (_ image: UIImage?, _ error: Error?) -> ())
-    func loadThumbnailImageWithCompletionHandler(_ completion: @escaping (_ image: UIImage?, _ error: Error?) -> ())
+    func loadImageWithCompletionHandler(_ completion: @escaping (_ image: UIImage?, _ error: NSError?) -> ())
+    func loadThumbnailImageWithCompletionHandler(_ completion: @escaping (_ image: UIImage?, _ error: NSError?) -> ())
     
     var attributedTitle: NSAttributedString? { get }
 }
 
 open class INSPhoto: INSPhotoViewable, Equatable {
+
     @objc open var image: UIImage?
     @objc open var thumbnailImage: UIImage?
     
@@ -57,14 +58,14 @@ open class INSPhoto: INSPhotoViewable, Equatable {
         self.thumbnailImage = thumbnailImage
     }
     
-    @objc open func loadImageWithCompletionHandler(_ completion: @escaping (_ image: UIImage?, _ error: Error?) -> ()) {
+    @objc open func loadImageWithCompletionHandler(_ completion: @escaping (_ image: UIImage?, _ error: NSError?) -> ()) {
         if let image = image {
             completion(image, nil)
             return
         }
         loadImageWithURL(imageURL, completion: completion)
     }
-    @objc open func loadThumbnailImageWithCompletionHandler(_ completion: @escaping (_ image: UIImage?, _ error: Error?) -> ()) {
+    @objc open func loadThumbnailImageWithCompletionHandler(_ completion: @escaping (_ image: UIImage?, _ error: NSError?) -> ()) {
         if let thumbnailImage = thumbnailImage {
             completion(thumbnailImage, nil)
             return
@@ -72,11 +73,12 @@ open class INSPhoto: INSPhotoViewable, Equatable {
         loadImageWithURL(thumbnailImageURL, completion: completion)
     }
     
-    open func loadImageWithURL(_ url: URL?, completion: @escaping (_ image: UIImage?, _ error: Error?) -> ()) {
+    open func loadImageWithURL(_ url: URL?, completion: @escaping (_ image: UIImage?, _ error: NSError?) -> ()) {
         let session = URLSession(configuration: URLSessionConfiguration.default)
         
         if let imageURL = url {
-            session.dataTask(with: imageURL, completionHandler: { (response, data, error) in
+            session.dataTask(with: imageURL, completionHandler: { (response: Data?, data: URLResponse?, error: NSError?) in
+                
                 DispatchQueue.main.async(execute: { () -> Void in
                     if error != nil {
                         completion(nil, error)
@@ -87,7 +89,8 @@ open class INSPhoto: INSPhotoViewable, Equatable {
                     }
                     session.finishTasksAndInvalidate()
                 })
-            }).resume()
+                
+            } as! (Data?, URLResponse?, Error?) -> Void).resume()
         } else {
             completion(nil, NSError(domain: "INSPhotoDomain", code: -2, userInfo: [ NSLocalizedDescriptionKey: "Image URL not found."]))
         }
